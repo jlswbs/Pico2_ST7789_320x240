@@ -32,6 +32,7 @@ uint offset = pio_add_program(pio, &st7789_lcd_program);
   bool state[WIDTH]; 
   bool newstate[WIDTH];
   bool rules[8] = {0, 1, 1, 1, 1, 0, 0, 0};
+  uint16_t image = BLACK;
   int cnt;
 
 #define SERIAL_CLK_DIV 2.f
@@ -139,6 +140,15 @@ void setup() {
 
   seed_random_from_rosc();
 
+  st7789_start_pixels(pio, sm);
+
+  for (int i=0; i<SCR; i++) {
+
+    st7789_lcd_put(pio, sm, image >> 8);
+    st7789_lcd_put(pio, sm, image & 0xff);
+
+  }
+
   rndrule();
   
 }
@@ -160,7 +170,7 @@ void loop() {
       int k = 4 * state[(x-1+WIDTH)%WIDTH] + 2 * state[x] + state[(x+1)%WIDTH];
       newstate[x] = rules[k];
 
-      uint16_t image = state[x] ? BLACK:WHITE;
+      image = state[x] ? BLACK:WHITE;
 
       st7789_lcd_put(pio, sm, image >> 8);
       st7789_lcd_put(pio, sm, image & 0xff);
