@@ -34,6 +34,7 @@ uint offset = pio_add_program(pio, &st7789_lcd_program);
   float D2I[WIDTH];
   float p[6];
   float dt = 0.07f;
+  uint16_t image = BLACK;
 
 uint16_t color565(uint8_t red, uint8_t green, uint8_t blue) { return ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3); }
 float randomf(float minf, float maxf) {return minf + (rand()%(1UL << 31))*(maxf - minf) / (1UL << 31);} 
@@ -114,6 +115,15 @@ static inline void seed_random_from_rosc(){
 
 void rndrule(){
 
+  st7789_start_pixels(pio, sm);
+
+  for (int i=0; i<SCR; i++) {
+
+    st7789_lcd_put(pio, sm, image >> 8);
+    st7789_lcd_put(pio, sm, image & 0xff);
+
+  }
+
   p[0] = randomf(0.01f, 1.0f);
   p[1] = randomf(0.01f, 15.0f);
   p[2] = randomf(0.01f, 4.0f);
@@ -162,8 +172,6 @@ void loop() {
   int time = millis();
 
   if (gpio_get(KEY_A) == false) rndrule();
-  
-  st7789_start_pixels(pio, sm);
 
   for(int j=0; j<HEIGHT; j++) {
    

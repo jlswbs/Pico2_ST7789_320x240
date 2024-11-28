@@ -1,4 +1,4 @@
-// 1D Simplest cellular automata // 
+// 1D Fizzy cellular automata //
 
 #include "hardware/structs/rosc.h"
 #include "st7789_lcd.pio.h"
@@ -27,9 +27,13 @@ uint offset = pio_add_program(pio, &st7789_lcd_program);
 #define WIDTH   240
 #define HEIGHT  320
 #define SCR     (WIDTH*HEIGHT)
-uint16_t image = BLACK;
 
-  bool state[WIDTH];
+uint16_t color565(uint8_t red, uint8_t green, uint8_t blue) { return ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3); }
+
+  int Calm = 233;
+  int CellIndex = 0;
+  float CellVal[WIDTH];
+  uint16_t image = BLACK;
 
 #define SERIAL_CLK_DIV 2.f
 
@@ -105,7 +109,7 @@ static inline void seed_random_from_rosc(){
   srand(random);
 }
 
-void rndrule(){
+void rndrule() {
 
   st7789_start_pixels(pio, sm);
 
@@ -115,9 +119,9 @@ void rndrule(){
     st7789_lcd_put(pio, sm, image & 0xff);
 
   }
-  
-  for (int i=0; i<WIDTH; i++) state[i] = 0;
-  state[rand()%WIDTH] = 1;
+
+  Calm = 16 + rand()%233;
+  for (int i = 0; i < WIDTH; i++) CellVal[i] = rand()%128;
 
 }
 
@@ -151,22 +155,32 @@ void setup() {
 
 void loop() {
 
-  if (gpio_get(KEY_A) == false) rndrule();
+  for (int y = 0; y < HEIGHT; y++) {
 
-  for(int y=0; y<HEIGHT; y++) {
+    if (gpio_get(KEY_A) == false) rndrule();
 
-    for(int x=0; x<WIDTH; x++) {
-      
-      bool k = k ^ state[x];
-      state[x] = k;
+    for (int x = 0; x < WIDTH; x++) {
+    
+      CellIndex = (CellIndex+1)%WIDTH;
 
-      image = WHITE * state[x];
+      uint8_t coll = 4.7f * CellVal[CellIndex];
+      image = color565(coll, coll, coll);
       st7789_lcd_put(pio, sm, image >> 8);
       st7789_lcd_put(pio, sm, image & 0xff);
- 
-    }
 
-    delayMicroseconds(150);
+      int below      = (CellIndex+1)%WIDTH;
+      int above      = (CellIndex+WIDTH-1)%WIDTH;
+      int left       = (CellIndex+WIDTH-1)%WIDTH;
+      int right      = (CellIndex+1)%WIDTH;
+      int aboveright = ((CellIndex-1) + 1 + WIDTH)%WIDTH;
+      int aboveleft  = ((CellIndex-1) - 1 + WIDTH)%WIDTH;
+      int belowright = ((CellIndex+1) + 1 + WIDTH)%WIDTH;
+      int belowleft  = ((CellIndex+1) - 1 + WIDTH)%WIDTH;
+
+      float NeighbourMix = powf((CellVal[left]*CellVal[right]*CellVal[above]*CellVal[below]*CellVal[belowleft]*CellVal[belowright]*CellVal[aboveleft]*CellVal[aboveright]),0.125f);
+      CellVal[CellIndex] = fmod(sqrtf(CellVal[CellIndex]*NeighbourMix)+0.5f, Calm);
+      
+    }
 
   }
 

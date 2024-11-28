@@ -27,13 +27,11 @@ uint offset = pio_add_program(pio, &st7789_lcd_program);
 #define WIDTH   240
 #define HEIGHT  320
 #define SCR     (WIDTH*HEIGHT)
-#define ITER    HEIGHT/4
 
   bool state[WIDTH]; 
   bool newstate[WIDTH];
   bool rules[8] = {0, 1, 1, 1, 1, 0, 0, 0};
   uint16_t image = BLACK;
-  int cnt;
 
 #define SERIAL_CLK_DIV 2.f
 
@@ -111,9 +109,17 @@ static inline void seed_random_from_rosc(){
 
 void rndrule(){
 
+  st7789_start_pixels(pio, sm);
+
+  for (int i=0; i<SCR; i++) {
+
+    st7789_lcd_put(pio, sm, image >> 8);
+    st7789_lcd_put(pio, sm, image & 0xff);
+
+  }
+
   for (int i=0; i<8; i++) rules[i] = rand()%2;
   for (int i=0; i<WIDTH; i++) state[i] = rand()%2;
-  cnt = 0;
 
 }
 
@@ -139,29 +145,17 @@ void setup() {
   gpio_pull_up(KEY_A);
 
   seed_random_from_rosc();
-
-  st7789_start_pixels(pio, sm);
-
-  for (int i=0; i<SCR; i++) {
-
-    st7789_lcd_put(pio, sm, image >> 8);
-    st7789_lcd_put(pio, sm, image & 0xff);
-
-  }
-
-  rndrule();
   
 }
 
 
 void loop() {
-  
-  st7789_start_pixels(pio, sm);
+
+  if (gpio_get(KEY_A) == false) rndrule();
+
+  rndrule();
 
   for(int y=0; y<HEIGHT; y++) {
-  
-    if (cnt == ITER) rndrule();
-    cnt++;
 
     memset (newstate, 0, sizeof(newstate));
 
@@ -179,8 +173,8 @@ void loop() {
 
     memcpy (state, newstate, sizeof(state));
 
-    delay(10);
-
   }
+
+  delay(500);
 
 }
