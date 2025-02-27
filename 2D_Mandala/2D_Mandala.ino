@@ -30,7 +30,7 @@ uint offset = pio_add_program(pio, &st7789_lcd_program);
 #define HEIGHT  160
 #define SCR     (WIDTH*HEIGHT)
 #define SCR2    (FULLW*FULLH)
-#define CNUM    256
+#define CNUM    32
 
   float a = 0.25f;
   float p[WIDTH][HEIGHT];
@@ -130,7 +130,13 @@ void rndrule(){
   }
 
   a = randomf(-0.25f, 0.25f);
-  v[WIDTH/2][HEIGHT/2] = randomf(-TWO_PI, TWO_PI);
+  float seed = randomf(-TWO_PI, TWO_PI);
+
+  v[WIDTH/2][HEIGHT/2] = seed;
+  v[WIDTH/2][(HEIGHT/2)-1] = seed;
+  v[(WIDTH/2)-1][(HEIGHT/2)-1] = seed;
+  v[(WIDTH/2)-1][HEIGHT/2] = seed;
+
   for (int i = 0; i < CNUM; i++) color[i] = rand();
 
 }
@@ -183,7 +189,7 @@ void loop() {
     for (int x = 0; x < WIDTH; x++) {
 
       p[x][y] += v[x][y];
-      uint8_t coll = 255 - (CNUM * p[x][y]);
+      uint8_t coll = CNUM - (CNUM * p[x][y]);
       col[((2*x)+(2*y)*FULLW)] = color[coll%CNUM];
 
     }
